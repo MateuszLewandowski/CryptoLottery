@@ -1,4 +1,7 @@
 {
+    "cron/cron-bundle": {
+        "version": "2.10.3"
+    },
     "doctrine/annotations": {
         "version": "1.13",
         "recipe": {
@@ -34,6 +37,9 @@
             "config/packages/doctrine_migrations.yaml",
             "migrations/.gitignore"
         ]
+    },
+    "padam87/cron-bundle": {
+        "version": "v3.0.2"
     },
     "phpunit/phpunit": {
         "version": "9.5",

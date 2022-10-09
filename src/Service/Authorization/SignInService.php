@@ -2,7 +2,7 @@
 
 namespace App\Service\Authorization;
 
-final class GetConfigService implements GetConfigServiceInterface
+final class SignInService implements SignInServiceInterface
 {
     public function serve()
     {

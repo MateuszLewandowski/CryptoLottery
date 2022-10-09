@@ -47,12 +47,25 @@ class TicketRepository extends ServiceEntityRepository
                 ->select('COUNT(t.id)')
                 ->join('t.draw', 'd')
                 ->where('d.is_done = :is_done')
+                ->andWhere('d.launched_at is null')
                 ->setParameter('is_done', false)
-                ->orderBy('t.launched_at', 'DESC')
+                ->setMaxResults(1)
                 ->getQuery()
                 ->getSingleScalarResult();
         } catch (Throwable $e) {
-            return false;
+            return 0;
         }
+    }
+
+    public function getLaunchedLotteryTickets(): array
+    {
+        return $this->createQueryBuilder('t')
+            ->join('t.draw', 'd')
+            ->where('d.is_done = :is_done')
+            ->andWhere('d.launched_at is not null')
+            ->setParameter('is_done', false)
+            ->getQuery()
+            ->getResult()
+        ;
     }
 }

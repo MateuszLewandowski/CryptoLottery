@@ -5,6 +5,8 @@ namespace App\Service\Wallet;
 use App\Entity\Wallet;
 use App\Factory\Entity\User\WalletFactory;
 use App\Repository\WalletRepository;
+use InvalidArgumentException;
+use Symfony\Component\HttpFoundation\Response;
 
 final class GetWalletService implements GetWalletServiceInterface
 {
@@ -14,16 +16,23 @@ final class GetWalletService implements GetWalletServiceInterface
     ) {
     }
     
-    public function action(string $wallet): Wallet|false 
+    public function action(string $address): Wallet|false 
     {
         $wallet = $this->walletRepository->get(
-            wallet: $wallet
+            address: $address
         );
         if (! $wallet instanceof Wallet) {
             $wallet = $this->walletFactory->create(
                 arguments: [
-                    'wallet' => $wallet
+                    'address' => $address
                 ]
+            );
+            if (! $wallet instanceof Wallet) {
+                return false;
+            }
+            $this->walletRepository->save(
+                entity: $wallet,
+                flush: true,
             );
         }
         return $wallet;

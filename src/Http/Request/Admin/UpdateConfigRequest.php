@@ -13,13 +13,14 @@ use App\Http\Middleware\Rule\IsString;
 use App\Http\Middleware\Rule\IsTime;
 use App\Http\Request\ValidatableRequestInterface;
 use Symfony\Component\HttpFoundation\Request;
-use App\Helper\CamelCaseHelper;
+use App\Trait\RequestCoreValidationTrait;
 use ErrorException;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Polyfill\Intl\Icu\Exception\MethodNotImplementedException;
 
 final class UpdateConfigRequest extends Request implements ValidatableRequestInterface
 {
+    use RequestCoreValidationTrait;
+
     public ?string $draw_begins_at_hour;
     public ?int $draw_begins_at_day_no;
     public ?int $draw_begins_at_concrete_day;
@@ -50,24 +51,10 @@ final class UpdateConfigRequest extends Request implements ValidatableRequestInt
         $this->lottery_required_tickets_sum = $this->request->get('lottery_required_tickets_sum');
         $this->fee_basic = $this->request->get('fee_basic');
 
-        foreach (self::TO_VALIDATE as $key) {
-            $method = 'validate' . CamelCaseHelper::run($key);
-            if ($method === 'validateIsValid') {
-                dd(method_exists($this, $method));
-            }
-            if (method_exists($this, $method) && property_exists($this, $key)) {
-                $result = self::$method($this->{$key});
-                if ($result->getCode() !== Response::HTTP_OK) {
-                    $result->setMessageKey($key);
-                    return $result;
-                }
-                continue;
-            }
-            throw new MethodNotImplementedException(
-                methodName: $method
-            );
-        }
-        $this->is_valid = true;
+        $this->runCoreValidation(
+            to_validate: self::TO_VALIDATE
+        );
+        
         return new Result(
             code: Response::HTTP_OK
         );

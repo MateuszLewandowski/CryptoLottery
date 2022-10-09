@@ -4,9 +4,12 @@ namespace App\Service\Lottery\Ticket;
 
 use App\Action\Lottery\Draw\PrepareDrawLaunchingDateTimeAction;
 use App\Core\Result\Result;
+use App\Entity\Admin\Config;
 use App\Entity\Lottery\Draw;
 use App\Entity\Lottery\Ticket;
 use App\Entity\Wallet;
+use App\Factory\DTO\Lottery\TicketDTOFactory;
+use App\Factory\Entity\Lottery\DrawFactory;
 use App\Factory\Entity\Lottery\TicketFactory;
 use App\Repository\Admin\ConfigRepository;
 use App\Repository\Lottery\DrawRepository;
@@ -18,6 +21,7 @@ use InvalidArgumentException;
 use Symfony\Component\Form\Exception\UnexpectedTypeException;
 use Symfony\Component\HttpFoundation\Response;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\LoggerInterface;
 
 final class BuyLotteryTicketService implements BuyLotteryTicketServiceInterface
 {
@@ -28,10 +32,14 @@ final class BuyLotteryTicketService implements BuyLotteryTicketServiceInterface
         private DrawRepository $drawRepository,
         private GetActiveDrawService $getActiveDrawService,
         private GetWalletServiceInterface $getWalletService,
+        private DrawFactory $drawFactory,
+        private LoggerInterface $logger,
+        private TicketDTOFactory $ticketDTOFactory,
+        private ManagerRegistry $doctrine,
     ) {
     }
     
-    public function action(string $wallet, int $quantity): Result 
+    public function action(string $wallet, int $quantity): Result|array 
     {
         if (! $this->checkIfTicketCanBePurchased()) {
             return new Result(
@@ -39,27 +47,42 @@ final class BuyLotteryTicketService implements BuyLotteryTicketServiceInterface
                 message: "You can buy a lottery ticket only after the results of the drawing are announced.",
             );
         }
-        if (! $wallet = $this->getWallet(wallet: $wallet)) {
+        if (! $wallet = $this->getWallet(address: $wallet)) {
             return new Result(
                 code: Response::HTTP_UNPROCESSABLE_ENTITY,
                 message: "Wallet {$wallet} not found.",
             );
         }
-        $tickets = $this->storeTickets(wallet: $wallet, quantity: $quantity);
-        
-        if ($this->checkIfLotteryCanBeLunched()) {
-            $this->lunchLottery();
+        $tickets = $this->storeTickets(
+            wallet: $wallet, quantity: $quantity
+        );
+        $this->logger->info(
+            message: "Tickets have been purchased {$quantity}."
+        );
+        $config = $this->configRepository->getConfig();
+        if ($this->checkIfLotteryCanBeLunched($config)) {
+            $draw = $this->lunchLottery($config);
+            $this->logger->info('Draw ' . $draw->getId() . ' will be launched at ' . $draw->getLaunchedAt()->format('Y-m-d H:i') . '.');
         }
-
         return $tickets;
     }
 
     private function checkIfTicketCanBePurchased(): bool {
-        return $this->drawRepository->checkIfTicketCanBePurchased();
+        if (! $this->checkIfAnyDrawExists()) {
+            $this->drawRepository->save(
+                entity: $this->drawFactory->create(),
+                flush: true,
+            );
+        } 
+        return $this->drawRepository->getActiveDraw() instanceof Draw;
     }
 
-    private function getWallet(string $wallet): false|Wallet {
-        $wallet = $this->getWalletService->action(wallet: $wallet);
+    private function checkIfAnyDrawExists(): bool {
+        return $this->drawRepository->checkIfAnyDrawExists();
+    }
+
+    private function getWallet(string $address): false|Wallet {
+        $wallet = $this->getWalletService->action(address: $address);
         return $wallet === null
             ? false
             : $wallet;
@@ -70,33 +93,27 @@ final class BuyLotteryTicketService implements BuyLotteryTicketServiceInterface
         return $this->getActiveDrawService->action();
     }
 
-    private function checkIfLotteryCanBeLunched(): bool 
+    private function checkIfLotteryCanBeLunched(Config $config): bool 
     {
-        $config = $this->configRepository->getConfig();
         $tickets_quantity = $this->ticketRepository->countAvailableLotteryTickets();
         return $tickets_quantity * $config->getLotteryTicketCost() >= $config->getLotteryRequiredTicketsSum();
     }
 
-    private function lunchLottery(): void {
+    private function lunchLottery($config): Draw {
         $draw = $this->getActiveDraw();
-        $doctrine = new ManagerRegistry;
-        $draw->setLauchedAt(
+        $draw->setLaunchedAt(
             new DateTimeImmutable(
-                (new PrepareDrawLaunchingDateTimeAction(
-                    new ConfigRepository(
-                        $doctrine
-                    )
-                ))->prepare()
+                (new PrepareDrawLaunchingDateTimeAction($config))->prepare()->format('Y-m-d H:i')
             )
         );
-        $entityManager = $doctrine->getManager();
+        $entityManager = $this->doctrine->getManager();
         $entityManager->persist($draw);
         $entityManager->flush();
-        return;
+        return $draw;
     }
 
     /**
-     * @return Ticket[]
+     * @return TicketDTO[]
      */
     private function storeTickets(Wallet $wallet, int $quantity): array
     {
@@ -115,7 +132,10 @@ final class BuyLotteryTicketService implements BuyLotteryTicketServiceInterface
             $this->ticketRepository->save(
                 entity: $ticket, flush: true,
             );
-            $tickets[] = $ticket;
+            
+            $tickets[] = $this->ticketDTOFactory->create(
+                ticket: $ticket
+            );
         }
         return count($tickets) > 0 
             ? $tickets

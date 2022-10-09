@@ -13,4 +13,6 @@ return [
     Symfony\Bundle\MakerBundle\MakerBundle::class => ['dev' => true],
     Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle::class => ['all' => true],
     Rewieer\TaskSchedulerBundle\RewieerTaskSchedulerBundle::class => ['all' => true],
+    Padam87\CronBundle\Padam87CronBundle::class => ['all' => true],
+    Cron\CronBundle\CronCronBundle::class => ['all' => true],
 ];

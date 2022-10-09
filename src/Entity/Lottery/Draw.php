@@ -25,7 +25,7 @@ class Draw implements FactorableEntityInterface
     private ?\DateTimeImmutable $created_at = null;
 
     #[ORM\Column(nullable: true)]
-    private ?\DateTimeImmutable $lauched_at = null;
+    private ?\DateTimeImmutable $launched_at = null;
 
     #[ORM\OneToMany(mappedBy: 'draw', targetEntity: Ticket::class)]
     private Collection $tickets;
@@ -33,11 +33,14 @@ class Draw implements FactorableEntityInterface
     #[ORM\Column]
     private ?bool $is_done = null;
 
+    #[ORM\OneToOne(targetEntity:"Ticket", cascade: ['persist', 'remove'])]
+    private ?Ticket $winner = null;
+
     public function __construct(
     ) {
         $this->is_done = false;
-        $this->tickets = new ArrayCollection();
         $this->tickets_quantity = 0;
+        $this->tickets = new ArrayCollection();
         $this->created_at = new DateTimeImmutable();
     }
 
@@ -70,14 +73,14 @@ class Draw implements FactorableEntityInterface
         return $this;
     }
 
-    public function getLauchedAt(): ?\DateTimeImmutable
+    public function getLaunchedAt(): ?\DateTimeImmutable
     {
-        return $this->lauched_at;
+        return $this->launched_at;
     }
 
-    public function setLauchedAt(?\DateTimeImmutable $lauched_at): self
+    public function setLaunchedAt(?\DateTimeImmutable $launched_at): self
     {
-        $this->lauched_at = $lauched_at;
+        $this->launched_at = $launched_at;
 
         return $this;
     }
@@ -120,6 +123,18 @@ class Draw implements FactorableEntityInterface
                 $ticket->setDraw(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getWinner(): ?Ticket
+    {
+        return $this->winner;
+    }
+
+    public function setWinner(?Ticket $winner): self
+    {
+        $this->winner = $winner;
 
         return $this;
     }

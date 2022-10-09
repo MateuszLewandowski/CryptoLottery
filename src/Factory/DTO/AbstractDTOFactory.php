@@ -2,10 +2,13 @@
 
 namespace App\Factory\DTO;
 
+use App\Entity\Lottery\Draw;
+use App\Entity\Wallet;
 use App\Factory\Entity\FactorableEntityInterface;
-use Symfony\Component\HttpFoundation\Response;
-use DeepCopy\Exception\PropertyException;
 use InvalidArgumentException;
+use App\Helper\CamelCaseHelper;
+use DateTime;
+use DateTimeImmutable;
 
 abstract class AbstractDTOFactory
 {
@@ -13,21 +16,40 @@ abstract class AbstractDTOFactory
 
     public abstract function create(FactorableEntityInterface $object): FactorableDTOInterface;
 
-    protected function make(string $DTO, object $object) 
+    protected function make(string $dto, array $properties): FactorableDTOInterface
     {
         foreach ($this->required as $key) {
-            if (!array_key_exists($key, $arguments)) {
+            if (!array_key_exists($key, $properties)) {
                 throw new InvalidArgumentException("Required argument is missing - {$key}.");
             }
         }
-        foreach ($arguments as $key => $value) {
-            if (!property_exists($DTO, $key)) {
-                throw new PropertyException(
-                    code: Response::HTTP_INTERNAL_SERVER_ERROR,
-                    message: "Required property {$key} not found."
-                );
+        foreach ($properties as $key => &$value) {
+            if ($value instanceof DateTime || $value instanceof DateTimeImmutable) {
+                if (str_contains($key, 'hour')) {
+                    $value = $value->format('H:i');
+                    continue;
+                }
+                $value = $value->format('Y-m-d H:i');
+            }
+            if ($value instanceof Wallet || $value instanceof Draw) {
+                $value = [
+                    'uri' => $key . '/' . $value->getId()
+                ];
             }
         }
-        return $DTO(...array_values($arguments));
+        return new $dto(
+            ...array_values($properties)
+        );
+    }
+
+    protected function extractEntityProperties(object $object): array {
+        $collection = [];
+        foreach ($this->required as $key) {
+            if (!property_exists($object, $key)) {
+                throw new InvalidArgumentException("Required argument is missing - {$key}.");
+            }
+            $collection[$key] = $object->{'get' . CamelCaseHelper::run($key)}();
+        }
+        return $collection;
     }
 }

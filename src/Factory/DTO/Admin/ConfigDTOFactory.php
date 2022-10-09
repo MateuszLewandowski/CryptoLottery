@@ -2,8 +2,9 @@
 
 namespace App\Factory\DTO\Admin;
 
-use App\Entity\Admin\Config;
 use App\Factory\DTO\AbstractDTOFactory;
+use App\Factory\DTO\FactorableDTOInterface;
+use App\Factory\Entity\FactorableEntityInterface;
 use App\Model\DTO\Admin\ConfigDTO;
 
 final class ConfigDTOFactory extends AbstractDTOFactory
@@ -21,10 +22,14 @@ final class ConfigDTOFactory extends AbstractDTOFactory
         ];
     }
 
-    public function create(Config $config): ConfigDTO
+    public function create(FactorableEntityInterface $config): FactorableDTOInterface
     {
         return $this->make(
-            DTO: ConfigDTO::class, object: $config
+            dto: ConfigDTO::class, 
+            properties: $this->extractEntityProperties(
+                object: $config
+            )
         );
     }
+
 }

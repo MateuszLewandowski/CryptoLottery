@@ -1,0 +1,3 @@
+SYMFONY_ENV=dev
+
+* * * * * php /home/mateusz/Code/APIs/Own/CryptoLottery/bin/console cron:run lottery:draw-the-winner > /dev/null 

@@ -5,23 +5,31 @@ namespace App\Entity;
 use App\Entity\Lottery\Ticket;
 use App\Factory\Entity\FactorableEntityInterface;
 use App\Repository\WalletRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: WalletRepository::class)]
 class Wallet implements FactorableEntityInterface
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue]
-    #[ORM\Column]
-    private ?int $id = null;
+    #[ORM\Column(type: 'uuid', unique: true)]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
+    private ?string $id = null;
 
-    #[ORM\Column(length: 128)]
+    #[ORM\Column(length: 128, unique: true)]
     private ?string $address = null;
 
-    #[ORM\OneToOne(mappedBy: 'wallet', cascade: ['persist', 'remove'])]
-    private ?Ticket $ticket = null;
+    #[ORM\OneToMany(mappedBy: 'wallet', targetEntity: Ticket::class)]
+    private Collection $tickets;
 
-    public function getId(): ?int
+    public function __construct()
+    {
+        $this->tickets = new ArrayCollection();
+    }
+
+    public function getId(): ?string
     {
         return $this->id;
     }
@@ -38,19 +46,32 @@ class Wallet implements FactorableEntityInterface
         return $this;
     }
 
-    public function getTicket(): ?Ticket
+    /**
+     * @return Collection<int, Ticket>
+     */
+    public function getTickets(): Collection
     {
-        return $this->ticket;
+        return $this->tickets;
     }
 
-    public function setTicket(Ticket $ticket): self
+    public function addTicket(Ticket $ticket): self
     {
-        // set the owning side of the relation if necessary
-        if ($ticket->getWallet() !== $this) {
+        if (!$this->tickets->contains($ticket)) {
+            $this->tickets->add($ticket);
             $ticket->setWallet($this);
         }
 
-        $this->ticket = $ticket;
+        return $this;
+    }
+
+    public function removeTicket(Ticket $ticket): self
+    {
+        if ($this->tickets->removeElement($ticket)) {
+            // set the owning side to null (unless already changed)
+            if ($ticket->getWallet() === $this) {
+                $ticket->setWallet(null);
+            }
+        }
 
         return $this;
     }

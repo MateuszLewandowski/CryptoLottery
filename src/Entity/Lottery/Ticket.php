@@ -5,6 +5,7 @@ namespace App\Entity\Lottery;
 use App\Entity\Wallet;
 use App\Factory\Entity\FactorableEntityInterface;
 use App\Repository\Lottery\TicketRepository;
+use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: TicketRepository::class)]
@@ -19,13 +20,18 @@ class Ticket implements FactorableEntityInterface
     #[ORM\Column]
     private ?\DateTimeImmutable $created_at = null;
 
-    #[ORM\OneToOne(inversedBy: 'ticket', cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Wallet $wallet = null;
-
     #[ORM\ManyToOne(inversedBy: 'tickets')]
     #[ORM\JoinColumn(nullable: true)]
     private ?Draw $draw = null;
+
+    #[ORM\ManyToOne(inversedBy: 'tickets')]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Wallet $wallet = null;
+
+    public function __construct(
+    ) {
+        $this->created_at = new DateTimeImmutable();        
+    }
 
     public function getId(): ?string
     {
@@ -44,18 +50,6 @@ class Ticket implements FactorableEntityInterface
         return $this;
     }
 
-    public function getWallet(): ?Wallet
-    {
-        return $this->wallet;
-    }
-
-    public function setWallet(Wallet $wallet): self
-    {
-        $this->wallet = $wallet;
-
-        return $this;
-    }
-
     public function getDraw(): ?Draw
     {
         return $this->draw;
@@ -64,6 +58,18 @@ class Ticket implements FactorableEntityInterface
     public function setDraw(?Draw $draw): self
     {
         $this->draw = $draw;
+
+        return $this;
+    }
+
+    public function getWallet(): ?Wallet
+    {
+        return $this->wallet;
+    }
+
+    public function setWallet(?Wallet $wallet): self
+    {
+        $this->wallet = $wallet;
 
         return $this;
     }

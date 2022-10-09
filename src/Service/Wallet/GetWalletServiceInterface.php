@@ -6,5 +6,5 @@ use App\Entity\Wallet;
 
 interface GetWalletServiceInterface
 {
-    public function action(string $wallet): Wallet|false;
+    public function action(string $address): Wallet|false;
 }

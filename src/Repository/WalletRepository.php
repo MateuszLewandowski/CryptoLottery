@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Wallet;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use Throwable;
 
 /**
  * @extends ServiceEntityRepository<Wallet>
@@ -39,16 +40,18 @@ class WalletRepository extends ServiceEntityRepository
         }
     }
 
-    /**
-     * @return Wallet 
-     */
-    public function get(string $wallet): Wallet
+    public function get(string $address): ?Wallet
     {
-        return $this->createQueryBuilder('w')
-            ->where('w.wallet = :wallet')
-            ->setParameter('wallet', $wallet)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
+        try {
+            return $this->createQueryBuilder('w')
+                ->where('w.address = :address')
+                ->setParameter('address', $address)
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getOneOrNullResult();
+            ;
+        } catch (Throwable $e) {
+            throw $e;
+        }
     }
 }

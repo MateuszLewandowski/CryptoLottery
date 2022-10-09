@@ -5,6 +5,7 @@ namespace App\Repository\Lottery;
 use App\Entity\Lottery\Draw;
 use DateTimeImmutable;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\NoResultException;
 use Doctrine\Persistence\ManagerRegistry;
 use Throwable;
 
@@ -46,12 +47,43 @@ class DrawRepository extends ServiceEntityRepository
         try {
             return $this->createQueryBuilder('d')
                 ->where('d.is_done = :is_done')
+                ->AndWhere('d.launched_at is null')
                 ->setParameter('is_done', false)
-                ->orderBy('d.launched_at', 'DESC')
+                ->orderBy('d.created_at', 'DESC')
+                ->setMaxResults(1)
                 ->getQuery()
-                ->getSingleScalarResult();
+                ->getOneOrNullResult();
         } catch (Throwable $e) {
-            return false;
+            return null;
         }
+    }
+
+    public function getLaunchedDraw(): ?Draw
+    {
+        try {
+            return $this->createQueryBuilder('d')
+                ->where('d.is_done = :is_done')
+                ->AndWhere('d.launched_at is not null')
+                ->setParameter('is_done', false)
+                ->orderBy('d.created_at', 'DESC')
+                ->setMaxResults(1)
+                ->getQuery()
+                ->getOneOrNullResult();
+        } catch (Throwable $e) {
+            return null;
+        }
+    }
+
+    public function checkIfAnyDrawExists(): bool 
+    {
+        try {
+            return $this->createQueryBuilder('d')
+                ->select('COUNT(d.id) as quantity')
+                ->getQuery()
+                ->getSingleScalarResult() > 0;
+        } catch (Throwable $e) {
+            dd($e);
+            return false;
+        } 
     }
 }
