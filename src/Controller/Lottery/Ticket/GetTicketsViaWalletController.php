@@ -3,39 +3,40 @@
 namespace App\Controller\Lottery\Ticket;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use App\Http\Request\Lottery\Ticket\BuyLotteryTicketRequest;
-use App\Controller\ActionableControllerInterface;
 use App\Core\Result\Result;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Response;
 use App\Factory\Request\RequestFactory;
+use App\Http\Request\Lottery\Ticket\GetTicketsViaWalletRequest;
 use App\Model\DTO\Lottery\TicketDTO;
-use App\Service\Lottery\Ticket\BuyLotteryTicketServiceInterface;
+use App\Model\DTO\User\WalletDTO;
+use App\Service\Lottery\Ticket\GetTicketsViaWalletServiceInterface;
 use App\Trait\ControllerBeforeActionValidationTrait;
 use App\Trait\ControllerResponseHandlerTrait;
 use App\Validation\ResponseCodeValidator;
+use App\Web3\RunContract;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
-final class BuyLotteryTicketController extends AbstractController implements ActionableControllerInterface
+final class GetTicketsViaWalletController extends AbstractController
 {
     use ControllerResponseHandlerTrait, ControllerBeforeActionValidationTrait;
 
-    private BuyLotteryTicketRequest $request;
+    private GetTicketsViaWalletRequest $request;
 
-    private const CONTEXT = 'BuyLotteryTicketController';
+    private const CONTEXT = 'GetTicketsViaWalletController';
 
     public function __construct(
-        private BuyLotteryTicketServiceInterface $service,
+        private GetTicketsViaWalletServiceInterface $service,
         private LoggerInterface $logger,
     ) {
         $this->request = RequestFactory::create(
-            class: BuyLotteryTicketRequest::class
+            class: GetTicketsViaWalletRequest::class
         );
     }
 
-    #[Route('/lottery/tickets/buy', methods: ['POST'])]
-    public function action(): Response
+    #[Route('/wallet/{address}/tickets', methods: ['GET'])]
+    public function action(string $address): Response
     {
         try {
             /**
@@ -48,7 +49,7 @@ final class BuyLotteryTicketController extends AbstractController implements Act
              */
             if ($this->code === Response::HTTP_OK) {
                 $result = $this->service->action(
-                    ...$this->request->validated()
+                    address: $address
                 );
                 if ($result instanceof Result) {
                     $this->code = $result->getCode();
@@ -81,18 +82,10 @@ final class BuyLotteryTicketController extends AbstractController implements Act
 
     private function afterAction(): void {
         $this->code = Response::HTTP_CREATED;
-        if (!is_array($this->payload)) {
+        if (!$this->payload instanceof WalletDTO) {
             $this->code = Response::HTTP_INTERNAL_SERVER_ERROR;
             $this->error = 'Method should return a collection of TicketDTO.';
-        } else {
-            foreach ($this->payload as $ticketDTO) {
-                if (!$ticketDTO instanceof TicketDTO) {
-                    $this->code = Response::HTTP_INTERNAL_SERVER_ERROR;
-                    $this->error = 'Method should return a collection of TicketDTO.';
-                    break;
-                }
-            }
-        }
+        } 
         return;
     }
 }

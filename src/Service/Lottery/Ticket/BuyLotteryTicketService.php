@@ -16,6 +16,7 @@ use App\Repository\Lottery\DrawRepository;
 use App\Repository\Lottery\TicketRepository;
 use App\Service\Lottery\Draw\GetActiveDrawService;
 use App\Service\Wallet\GetWalletServiceInterface;
+use App\Web3\Web3Client;
 use DateTimeImmutable;
 use InvalidArgumentException;
 use Symfony\Component\Form\Exception\UnexpectedTypeException;
@@ -36,6 +37,7 @@ final class BuyLotteryTicketService implements BuyLotteryTicketServiceInterface
         private LoggerInterface $logger,
         private TicketDTOFactory $ticketDTOFactory,
         private ManagerRegistry $doctrine,
+        private Web3Client $web3Client,
     ) {
     }
     
@@ -53,13 +55,19 @@ final class BuyLotteryTicketService implements BuyLotteryTicketServiceInterface
                 message: "Wallet {$wallet} not found.",
             );
         }
+        $config = $this->configRepository->getConfig();
+        if (! $this->checkCryptocurrencyAmountAvailability(config: $config, address: $wallet->getAddress(), quantity: $quantity)) {
+            return new Result(
+                code: Response::HTTP_METHOD_NOT_ALLOWED,
+                message: "You don't have enough funds in your account.",
+            );
+        }
         $tickets = $this->storeTickets(
             wallet: $wallet, quantity: $quantity
         );
         $this->logger->info(
             message: "Tickets have been purchased {$quantity}."
         );
-        $config = $this->configRepository->getConfig();
         if ($this->checkIfLotteryCanBeLunched($config)) {
             $draw = $this->lunchLottery($config);
             $this->logger->info('Draw ' . $draw->getId() . ' will be launched at ' . $draw->getLaunchedAt()->format('Y-m-d H:i') . '.');
@@ -143,5 +151,12 @@ final class BuyLotteryTicketService implements BuyLotteryTicketServiceInterface
                 code: Response::HTTP_BAD_REQUEST,
                 message: 'Empty ticket list has been returned.'
             );
+    }
+
+    private function checkCryptocurrencyAmountAvailability(Config $config, string $address, int $quantity): bool 
+    {
+        return $quantity * $config->getLotteryTicketCost() > $this->web3Client->getBalance(
+            address: $address
+        );
     }
 }

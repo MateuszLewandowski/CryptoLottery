@@ -3,6 +3,7 @@
 namespace App\Http\Request\Admin;
 
 use App\Core\Result\Result;
+use App\Helper\MathFloatConvertHelper;
 use App\Http\Middleware\Rule\IsBoolean;
 use App\Http\Middleware\Rule\IsFloat;
 use App\Http\Middleware\Rule\IsInteger;
@@ -12,6 +13,7 @@ use App\Http\Middleware\Rule\IsPositiveOrZero;
 use App\Http\Middleware\Rule\IsString;
 use App\Http\Middleware\Rule\IsTime;
 use App\Http\Request\ValidatableRequestInterface;
+use App\Trait\RequestAPITokenValidationTrait;
 use Symfony\Component\HttpFoundation\Request;
 use App\Trait\RequestCoreValidationTrait;
 use ErrorException;
@@ -19,15 +21,15 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class UpdateConfigRequest extends Request implements ValidatableRequestInterface
 {
-    use RequestCoreValidationTrait;
+    use RequestCoreValidationTrait, RequestAPITokenValidationTrait;
 
     public ?string $draw_begins_at_hour;
     public ?int $draw_begins_at_day_no;
     public ?int $draw_begins_at_concrete_day;
     public ?bool $draw_is_concrete_day_set;
-    public ?float $lottery_ticket_cost;
-    public ?float $lottery_required_tickets_sum;
-    public ?float $fee_basic;
+    public ?int $lottery_ticket_cost;
+    public ?int $lottery_required_tickets_sum;
+    public ?int $fee_basic;
 
     private bool $is_valid = false;
 
@@ -43,13 +45,28 @@ final class UpdateConfigRequest extends Request implements ValidatableRequestInt
 
     public function validate(): Result 
     {
+        if (false === self::validateAPIToken(
+            api_token: $this->headers->get('API-Token', false)
+        )) {
+            return new Result(
+                code: Response::HTTP_UNAUTHORIZED,
+                message: 'Unauthorized.',
+            );
+        }
+
         $this->draw_begins_at_hour = $this->request->get('draw_begins_at_hour');
         $this->draw_begins_at_day_no = $this->request->get('draw_begins_at_day_no');
         $this->draw_begins_at_concrete_day = $this->request->get('draw_begins_at_concrete_day');
         $this->draw_is_concrete_day_set = $this->request->get('draw_is_concrete_day_set');
-        $this->lottery_ticket_cost = $this->request->get('lottery_ticket_cost');
-        $this->lottery_required_tickets_sum = $this->request->get('lottery_required_tickets_sum');
-        $this->fee_basic = $this->request->get('fee_basic');
+        $this->lottery_ticket_cost = MathFloatConvertHelper::run(
+            (float) $this->request->get('lottery_ticket_cost')
+        );
+        $this->lottery_required_tickets_sum = MathFloatConvertHelper::run(
+            (float) $this->request->get('lottery_required_tickets_sum')
+        );
+        $this->fee_basic = MathFloatConvertHelper::run(
+            (float) $this->request->get('fee_basic')
+        );
 
         $this->runCoreValidation(
             to_validate: self::TO_VALIDATE
@@ -117,7 +134,7 @@ final class UpdateConfigRequest extends Request implements ValidatableRequestInt
     {
         $isNotNull = new IsNotNull;
         $isNotNull
-            ->set(new IsFloat)
+            ->set(new IsInteger)
             ->set(new IsPositive);
         return $isNotNull->validate(value: $lottery_ticket_cost);
     }
@@ -126,7 +143,7 @@ final class UpdateConfigRequest extends Request implements ValidatableRequestInt
     {
         $isNotNull = new IsNotNull;
         $isNotNull
-            ->set(new IsFloat)
+            ->set(new IsInteger)
             ->set(new IsPositive);
         return $isNotNull->validate(value: $lottery_required_tickets_sum);
     }
@@ -135,7 +152,7 @@ final class UpdateConfigRequest extends Request implements ValidatableRequestInt
     {
         $isNotNull = new IsNotNull;
         $isNotNull
-            ->set(new IsFloat)
+            ->set(new IsInteger)
             ->set(new IsPositiveOrZero);
         return $isNotNull->validate(value: $fee_basic);
     }

@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20221009180751 extends AbstractMigration
+final class Version20221011141731 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -23,7 +23,7 @@ final class Version20221009180751 extends AbstractMigration
         $this->addSql('CREATE SEQUENCE config_id_seq INCREMENT BY 1 MINVALUE 1 START 1');
         $this->addSql('CREATE SEQUENCE cron_job_id_seq INCREMENT BY 1 MINVALUE 1 START 1');
         $this->addSql('CREATE SEQUENCE cron_report_id_seq INCREMENT BY 1 MINVALUE 1 START 1');
-        $this->addSql('CREATE TABLE config (id INT NOT NULL, draw_begins_at_hour TIME(0) WITHOUT TIME ZONE NOT NULL, draw_begins_at_day_no SMALLINT NOT NULL, draw_begins_at_concrete_day SMALLINT NOT NULL, draw_is_concrete_day_set BOOLEAN NOT NULL, lottery_ticket_cost INT NOT NULL, lottery_required_tickets_sum INT NOT NULL, fee_basic SMALLINT NOT NULL, PRIMARY KEY(id))');
+        $this->addSql('CREATE TABLE config (id INT NOT NULL, draw_begins_at_hour TIME(0) WITHOUT TIME ZONE NOT NULL, draw_begins_at_day_no SMALLINT NOT NULL, draw_begins_at_concrete_day SMALLINT NOT NULL, draw_is_concrete_day_set BOOLEAN NOT NULL, lottery_ticket_cost DOUBLE PRECISION NOT NULL, lottery_required_tickets_sum DOUBLE PRECISION NOT NULL, fee_basic SMALLINT NOT NULL, PRIMARY KEY(id))');
         $this->addSql('COMMENT ON COLUMN config.draw_begins_at_hour IS \'(DC2Type:time_immutable)\'');
         $this->addSql('CREATE TABLE cron_job (id INT NOT NULL, name VARCHAR(191) NOT NULL, command VARCHAR(1024) NOT NULL, schedule VARCHAR(191) NOT NULL, description VARCHAR(191) NOT NULL, enabled BOOLEAN NOT NULL, PRIMARY KEY(id))');
         $this->addSql('CREATE UNIQUE INDEX un_name ON cron_job (name)');

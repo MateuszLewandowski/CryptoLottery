@@ -30,15 +30,15 @@ class Config implements FactorableEntityInterface
 
     #[ORM\Column]
     #[Assert\Positive]
-    private ?int $lottery_ticket_cost = null;
+    private ?float $lottery_ticket_cost = null;
 
     #[ORM\Column]
     #[Assert\Positive]
-    private ?int $lottery_required_tickets_sum = null;
+    private ?float $lottery_required_tickets_sum = null;
 
     #[ORM\Column(type: Types::SMALLINT)]
     #[Assert\PositiveOrZero]
-    private ?int $fee_basic = null;
+    private ?float $fee_basic = null;
 
     public function getId(): ?int
     {
@@ -93,36 +93,36 @@ class Config implements FactorableEntityInterface
         return $this;
     }
 
-    public function getLotteryTicketCost(): ?int
+    public function getLotteryTicketCost(): ?float
     {
         return $this->lottery_ticket_cost;
     }
 
-    public function setLotteryTicketCost(int $lottery_ticket_cost): self
+    public function setLotteryTicketCost(float $lottery_ticket_cost): self
     {
         $this->lottery_ticket_cost = $lottery_ticket_cost;
 
         return $this;
     }
 
-    public function getLotteryRequiredTicketsSum(): ?int
+    public function getLotteryRequiredTicketsSum(): ?float
     {
         return $this->lottery_required_tickets_sum;
     }
 
-    public function setLotteryRequiredTicketsSum(int $lottery_required_tickets_sum): self
+    public function setLotteryRequiredTicketsSum(float $lottery_required_tickets_sum): self
     {
         $this->lottery_required_tickets_sum = $lottery_required_tickets_sum;
 
         return $this;
     }
 
-    public function getFeeBasic(): ?int
+    public function getFeeBasic(): ?float
     {
         return $this->fee_basic;
     }
 
-    public function setFeeBasic(int $fee_basic): self
+    public function setFeeBasic(float $fee_basic): self
     {
         $this->fee_basic = $fee_basic;
 

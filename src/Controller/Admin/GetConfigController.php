@@ -64,7 +64,7 @@ final class GetConfigController extends AbstractController implements Actionable
                 content: json_encode(
                     $this->code !== Response::HTTP_OK 
                         ? ['error' => $this->error ?? $this->payload] 
-                        : ['config' => $this->configDTOFactory->create($this->payload) ],
+                        : ['config' => $this->payload],
                 ),
             );
         }

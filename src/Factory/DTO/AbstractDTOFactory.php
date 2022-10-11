@@ -3,10 +3,12 @@
 namespace App\Factory\DTO;
 
 use App\Entity\Lottery\Draw;
+use App\Entity\Lottery\Ticket;
 use App\Entity\Wallet;
 use App\Factory\Entity\FactorableEntityInterface;
 use InvalidArgumentException;
 use App\Helper\CamelCaseHelper;
+use App\Helper\MathFloatConvertHelper;
 use DateTime;
 use DateTimeImmutable;
 
@@ -31,7 +33,11 @@ abstract class AbstractDTOFactory
                 }
                 $value = $value->format('Y-m-d H:i');
             }
-            if ($value instanceof Wallet || $value instanceof Draw) {
+            if (
+                $value instanceof Wallet    || 
+                $value instanceof Draw      || 
+                $value instanceof Ticket
+            ) {
                 $value = [
                     'uri' => $key . '/' . $value->getId()
                 ];
@@ -48,7 +54,15 @@ abstract class AbstractDTOFactory
             if (!property_exists($object, $key)) {
                 throw new InvalidArgumentException("Required argument is missing - {$key}.");
             }
-            $collection[$key] = $object->{'get' . CamelCaseHelper::run($key)}();
+            $value = $object->{'get' . CamelCaseHelper::run($key)}();
+            switch ($key) {
+                case 'lottery_ticket_cost':
+                case 'lottery_required_tickets_sum':
+                case 'fee_basic':
+                    $value = MathFloatConvertHelper::run((int) $value);
+                    break;
+            }
+            $collection[$key] = $value;
         }
         return $collection;
     }

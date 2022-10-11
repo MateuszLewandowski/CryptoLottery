@@ -7,14 +7,16 @@ use App\Http\Middleware\Rule\IsNotNull;
 use App\Http\Middleware\Rule\IsPositive;
 use App\Http\Middleware\Rule\IsString;
 use App\Http\Request\ValidatableRequestInterface;
+use App\Trait\RequestAPITokenValidationTrait;
 use App\Trait\RequestCoreValidationTrait;
+use App\Web3\Validation\WalletAddressValidation;
 use ErrorException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 final class BuyLotteryTicketRequest extends Request implements ValidatableRequestInterface
 {
-    use RequestCoreValidationTrait;
+    use RequestCoreValidationTrait, RequestAPITokenValidationTrait;
 
     public string $wallet;
     public int $quantity;
@@ -28,8 +30,22 @@ final class BuyLotteryTicketRequest extends Request implements ValidatableReques
 
     public function validate(): Result 
     {
+        if (false === self::validateAPIToken(
+            api_token: $this->headers->get('API-Token', false)
+        )) {
+            return new Result(
+                code: Response::HTTP_UNAUTHORIZED,
+                message: 'Unauthorized.',
+            );
+        }
+
         $this->wallet = $this->request->get('wallet');
         $this->quantity = $this->request->get('quantity');
+
+        if (! WalletAddressValidation::check(address: $this->wallet)) {
+            $this->code = Response::HTTP_BAD_REQUEST;
+            $this->error = 'Invalid wallet address.';
+        }
 
         $this->runCoreValidation(
             to_validate: self::TO_VALIDATE

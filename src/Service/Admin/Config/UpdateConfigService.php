@@ -2,10 +2,11 @@
 
 namespace App\Service\Admin\Config;
 
-use App\Entity\Admin\Config;
+use App\Factory\DTO\Admin\ConfigDTOFactory;
 use App\Factory\Entity\Admin\ConfigFactory;
 use App\Repository\Admin\ConfigRepository;
 use App\Helper\CamelCaseHelper;
+use App\Model\DTO\Admin\ConfigDTO;
 use DateTimeImmutable;
 use Doctrine\Persistence\ManagerRegistry;
 use PHPUnit\Framework\MockObject\InvalidMethodNameException;
@@ -14,12 +15,13 @@ final class UpdateConfigService implements UpdateConfigServiceInterface
 {
     public function __construct(
         private ConfigFactory $configFactory,
+        private ConfigDTOFactory $configDTOFactory,
         private ConfigRepository $configRepository,
         private ManagerRegistry $doctrine,
     ) {
     }
 
-    public function serve(array $args): Config
+    public function serve(array $args): ConfigDTO
     {
         if (! $config = $this->configRepository->getConfig()) {
             $config = $this->configFactory->create($args);
@@ -44,6 +46,8 @@ final class UpdateConfigService implements UpdateConfigServiceInterface
             $entityManager->persist($config);
             $entityManager->flush();
         }
-        return $config;
+        return $this->configDTOFactory->create(
+            config: $config,
+        );
     }
 }

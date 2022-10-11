@@ -1,6 +1,7 @@
 <?php 
 
-namespace App\Http\Request\Admin;
+namespace App\Http\Request\Wallet;
+;
 
 use App\Core\Result\Result;
 use App\Http\Request\ValidatableRequestInterface;
@@ -8,7 +9,7 @@ use App\Trait\RequestAPITokenValidationTrait;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-final class GetConfigRequest extends Request implements ValidatableRequestInterface
+final class GetWalletCryptocurrencyEthRequest extends Request implements ValidatableRequestInterface
 {
     use RequestAPITokenValidationTrait;
     
@@ -22,7 +23,7 @@ final class GetConfigRequest extends Request implements ValidatableRequestInterf
                 message: 'Unauthorized.',
             );
         }
-
+        
         return new Result(
             code: Response::HTTP_OK
         );
