@@ -3,8 +3,6 @@
 namespace App\Factory\DTO;
 
 use App\Entity\Lottery\Draw;
-use App\Entity\Lottery\Ticket;
-use App\Entity\Wallet;
 use App\Factory\Entity\FactorableEntityInterface;
 use InvalidArgumentException;
 use App\Helper\CamelCaseHelper;
@@ -33,11 +31,7 @@ abstract class AbstractDTOFactory
                 }
                 $value = $value->format('Y-m-d H:i');
             }
-            if (
-                $value instanceof Wallet    || 
-                $value instanceof Draw      || 
-                $value instanceof Ticket
-            ) {
+            if ($value instanceof Draw) {
                 $value = [
                     'uri' => $key . '/' . $value->getId()
                 ];
@@ -56,10 +50,8 @@ abstract class AbstractDTOFactory
             }
             $value = $object->{'get' . CamelCaseHelper::run($key)}();
             switch ($key) {
-                case 'lottery_ticket_cost':
-                case 'lottery_required_tickets_sum':
-                case 'fee_basic':
-                    $value = MathFloatConvertHelper::run((int) $value);
+                case 'created_at':
+                    $value = $value instanceof DateTimeImmutable ? $value->format('Y-m-d H:i:s') : $value;
                     break;
             }
             $collection[$key] = $value;

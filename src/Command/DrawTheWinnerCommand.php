@@ -4,16 +4,13 @@ namespace App\Command;
 
 use App\Entity\Lottery\Draw;
 use App\Repository\Lottery\DrawRepository;
-use App\Repository\Lottery\TicketRepository;
+use App\Service\Lottery\GetLaunchedLotteryTransactionsServiceInterface;
 use DateTimeImmutable;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
 use Padam87\CronBundle\Attribute\Job;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -25,13 +22,13 @@ use Throwable;
 #[Job(minute: '1', hour: '0', logFile: 'my-command.log')]
 class DrawTheWinnerCommand extends Command
 {
-    private const DATETIME_FORMAT = 'Y-m-d H:i';
+    private const DATETIME_FORMAT = 'Y-m-d H:i:s';
 
     public function __construct(
-        private TicketRepository $ticketRepository,
         private DrawRepository $drawRepository,
         private ManagerRegistry $doctrine,
         private LoggerInterface $logger,
+        private GetLaunchedLotteryTransactionsServiceInterface $getLaunchedLotteryTransactionsService,
     ) {
         parent::__construct();
     }
@@ -39,32 +36,55 @@ class DrawTheWinnerCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
-            $draw = $this->drawRepository->getLaunchedDraw();
-            if (!$draw instanceof Draw) {
-                $this->logger->error('Draw not found.', ['DrawTheWinnerCommand']);
-                return Command::FAILURE;
-            }
-            $launched_at = $draw->getLaunchedAt()->format(self::DATETIME_FORMAT);
-            $now = (new DateTimeImmutable())->format(self::DATETIME_FORMAT);
-            if ($now < $launched_at) {
-                $this->logger->info('Continued.', ['DrawTheWinnerCommand']);
+            // $draws = $this->drawRepository->getDoneDraws();
+            // dd($draws[0]->getWinner());
+
+            $draws = $this->drawRepository->getLaunchedDraws();
+            if (empty($draws)) {
+                $this->logger->error('Draws not found.', ['DrawTheWinnerCommand']);
                 return Command::SUCCESS;
             }
-            $tickets = $this->ticketRepository->getLaunchedLotteryTickets();
-            if (count($tickets) < 1) {
-                $this->logger->error('Tickets not found.', ['DrawTheWinnerCommand']);
-                return Command::INVALID;
+            foreach ($draws as $draw) {
+                $done_at = $draw->getDoneAt()->format(self::DATETIME_FORMAT);
+                $now = (new DateTimeImmutable())->format(self::DATETIME_FORMAT);
+
+                // if ($now < $done_at) {
+                //     $this->logger->info($draw->getId() . ': Continued.', ['DrawTheWinnerCommand']);
+                //     continue;
+                // }
+
+                $transactions = $draw->getTransactions()->filter(function($transaction) use ($draw) {
+                    return $transaction->getCreatedAt() >= $draw->getLaunchedAt()->format('Y-m-d H:i:s');
+                });
+
+                if ($transactions->count() < 1) {
+                    $this->logger->error($draw->getId() . ': Transactions not found.', ['DrawTheWinnerCommand']);
+                    continue;
+                }
+                $transactions = $transactions->toArray();
+                $_t = [];
+                foreach ($transactions as $transaction) {
+                    $_t[$transaction->getTransactionFrom()] = 0;
+                }
+                foreach ($transactions as $transaction) {
+                    $_t[$transaction->getTransactionFrom()] += $transaction->getValue();
+                }
+                /**
+                 * @todo proporcjonalnie generuj losy
+                 */
+                dd($_t);
+
+                shuffle($transactions);
+                $winner = $transactions[array_rand($transactions)];
+                $draw->setIsDone(true);
+                $draw->setWinner($winner);
+                $entityManager = $this->doctrine->getManager();
+                $entityManager->persist($draw);
+                $entityManager->flush();
             }
-            shuffle($tickets);
-            $winner = $tickets[array_rand($tickets)];
-            $draw->setWinner($winner);
-            $draw->setIsDone(true);
-            $entityManager = $this->doctrine->getManager();
-            $entityManager->persist($draw);
-            $entityManager->flush();
             return Command::SUCCESS;
         } catch (Throwable $e) {
-            $this->logger->critical($e->getMessage(), ['DrawTheWinnerCommand']);
+            $this->logger->critical($e->getCode() . ': ' . $e->getMessage(), ['DrawTheWinnerCommand']);
             return Command::FAILURE;
         }
     }

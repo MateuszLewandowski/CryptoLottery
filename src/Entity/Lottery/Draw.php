@@ -2,6 +2,7 @@
 
 namespace App\Entity\Lottery;
 
+use App\Entity\Transaction;
 use App\Factory\Entity\FactorableEntityInterface;
 use App\Repository\Lottery\DrawRepository;
 use DateTimeImmutable;
@@ -18,30 +19,29 @@ class Draw implements FactorableEntityInterface
     #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
     private ?string $id = null;
 
-    #[ORM\Column(nullable: true)]
-    private ?int $tickets_quantity = null;
-
     #[ORM\Column]
     private ?\DateTimeImmutable $created_at = null;
 
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $launched_at = null;
 
-    #[ORM\OneToMany(mappedBy: 'draw', targetEntity: Ticket::class)]
-    private Collection $tickets;
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $done_at = null;
+
+    #[ORM\OneToMany(mappedBy: 'draw', targetEntity: Transaction::class)]
+    private Collection $transactions;
 
     #[ORM\Column]
     private ?bool $is_done = null;
 
-    #[ORM\OneToOne(targetEntity:"Ticket", cascade: ['persist', 'remove'])]
-    private ?Ticket $winner = null;
+    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
+    private ?Transaction $winner = null;
 
     public function __construct(
     ) {
-        $this->is_done = false;
-        $this->tickets_quantity = 0;
-        $this->tickets = new ArrayCollection();
         $this->created_at = new DateTimeImmutable();
+        $this->transactions = new ArrayCollection();
+        $this->is_done = false;
     }
 
     public function getId(): ?string
@@ -49,28 +49,9 @@ class Draw implements FactorableEntityInterface
         return $this->id;
     }
 
-    public function getTicketsQuantity(): ?int
-    {
-        return $this->tickets_quantity;
-    }
-
-    public function setTicketsQuantity(?int $tickets_quantity): self
-    {
-        $this->tickets_quantity = $tickets_quantity;
-
-        return $this;
-    }
-
     public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->created_at;
-    }
-
-    public function setCreatedAt(\DateTimeImmutable $created_at): self
-    {
-        $this->created_at = $created_at;
-
-        return $this;
     }
 
     public function getLaunchedAt(): ?\DateTimeImmutable
@@ -85,54 +66,66 @@ class Draw implements FactorableEntityInterface
         return $this;
     }
 
-    public function getIsDone(): bool 
+    public function getDoneAt(): ?\DateTimeImmutable
     {
-        return $this->is_done;
+        return $this->done_at;
     }
 
-    public function setIsDone(bool $is_done): self 
+    public function setDoneAt(?\DateTimeImmutable $done_at): self
     {
-        $this->is_done = $is_done;
+        $this->done_at = $done_at;
 
         return $this;
     }
 
     /**
-     * @return Collection<int, Ticket>
+     * @return Collection<int, Transaction>
      */
-    public function getTickets(): Collection
+    public function getTransactions(): Collection
     {
-        return $this->tickets;
+        return $this->transactions;
     }
 
-    public function addTicket(Ticket $ticket): self
+    public function addTransaction(Transaction $transaction): self
     {
-        if (!$this->tickets->contains($ticket)) {
-            $this->tickets->add($ticket);
-            $ticket->setDraw($this);
+        if (!$this->transactions->contains($transaction)) {
+            $this->transactions->add($transaction);
+            $transaction->setDraw($this);
         }
 
         return $this;
     }
 
-    public function removeTicket(Ticket $ticket): self
+    public function removeTransaction(Transaction $transaction): self
     {
-        if ($this->tickets->removeElement($ticket)) {
+        if ($this->transactions->removeElement($transaction)) {
             // set the owning side to null (unless already changed)
-            if ($ticket->getDraw() === $this) {
-                $ticket->setDraw(null);
+            if ($transaction->getDraw() === $this) {
+                $transaction->setDraw(null);
             }
         }
 
         return $this;
     }
 
-    public function getWinner(): ?Ticket
+    public function isIsDone(): ?bool
+    {
+        return $this->is_done;
+    }
+
+    public function setIsDone(bool $is_done): self
+    {
+        $this->is_done = $is_done;
+
+        return $this;
+    }
+
+    public function getWinner(): ?Transaction
     {
         return $this->winner;
     }
 
-    public function setWinner(?Ticket $winner): self
+    public function setWinner(?Transaction $winner): self
     {
         $this->winner = $winner;
 

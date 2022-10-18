@@ -28,13 +28,13 @@ class Config implements FactorableEntityInterface
     #[ORM\Column]
     private ?bool $draw_is_concrete_day_set = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'bigint')]
     #[Assert\Positive]
-    private ?float $lottery_ticket_cost = null;
+    private ?int $lottery_ticket_cost = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'bigint')]
     #[Assert\Positive]
-    private ?float $lottery_required_tickets_sum = null;
+    private ?int $lottery_required_tickets_sum = null;
 
     #[ORM\Column(type: Types::SMALLINT)]
     #[Assert\PositiveOrZero]
@@ -93,24 +93,24 @@ class Config implements FactorableEntityInterface
         return $this;
     }
 
-    public function getLotteryTicketCost(): ?float
+    public function getLotteryTicketCost(): ?int
     {
         return $this->lottery_ticket_cost;
     }
 
-    public function setLotteryTicketCost(float $lottery_ticket_cost): self
+    public function setLotteryTicketCost(int $lottery_ticket_cost): self
     {
         $this->lottery_ticket_cost = $lottery_ticket_cost;
 
         return $this;
     }
 
-    public function getLotteryRequiredTicketsSum(): ?float
+    public function getLotteryRequiredTicketsSum(): ?int
     {
         return $this->lottery_required_tickets_sum;
     }
 
-    public function setLotteryRequiredTicketsSum(float $lottery_required_tickets_sum): self
+    public function setLotteryRequiredTicketsSum(int $lottery_required_tickets_sum): self
     {
         $this->lottery_required_tickets_sum = $lottery_required_tickets_sum;
 

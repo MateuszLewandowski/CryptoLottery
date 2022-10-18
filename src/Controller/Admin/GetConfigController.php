@@ -4,7 +4,6 @@ namespace App\Controller\Admin;
 
 use App\Controller\ActionableControllerInterface;
 use App\Factory\DTO\Admin\ConfigDTOFactory;
-use App\Factory\Entity\Admin\ConfigFactory;
 use App\Factory\Request\RequestFactory;
 use App\Http\Request\Admin\GetConfigRequest;
 use App\Service\Admin\Config\GetConfigServiceInterface;

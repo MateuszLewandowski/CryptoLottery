@@ -58,12 +58,8 @@ final class UpdateConfigRequest extends Request implements ValidatableRequestInt
         $this->draw_begins_at_day_no = $this->request->get('draw_begins_at_day_no');
         $this->draw_begins_at_concrete_day = $this->request->get('draw_begins_at_concrete_day');
         $this->draw_is_concrete_day_set = $this->request->get('draw_is_concrete_day_set');
-        $this->lottery_ticket_cost = MathFloatConvertHelper::run(
-            (float) $this->request->get('lottery_ticket_cost')
-        );
-        $this->lottery_required_tickets_sum = MathFloatConvertHelper::run(
-            (float) $this->request->get('lottery_required_tickets_sum')
-        );
+        $this->lottery_ticket_cost = (int) $this->request->get('lottery_ticket_cost');
+        $this->lottery_required_tickets_sum = (int) $this->request->get('lottery_required_tickets_sum');
         $this->fee_basic = MathFloatConvertHelper::run(
             (float) $this->request->get('fee_basic')
         );
