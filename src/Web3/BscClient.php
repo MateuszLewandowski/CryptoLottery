@@ -3,6 +3,9 @@
 namespace App\Web3;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Web3\ValueObjects\Transaction;
+use Web3\ValueObjects\Wei;
+use Web3\Web3;
 
 /**
  * @see https://docs.bscscan.com/v/bscscan-testnet/api-endpoints/accounts
@@ -70,5 +73,15 @@ final class BscClient
             url: SELF::URL . '?module=contract&action=getsourcecode&address=' . $address . '&apikey=' . SELF::API_KEY
         );
         dd($response->toArray());
+    }
+
+    /**
+     * Tests
+     */
+    public function makeTransaction(float $value) {
+        $value = new Wei(100000000000000);
+        $transaction = Transaction::between(self::LOTTERY_WALLET, self::TEST_WALLET)->withValue($value);
+        $web3 = new Web3(self::URL);
+        $web3->eth()->sendTransaction($transaction);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Command;
 use App\Entity\Lottery\Draw;
 use App\Repository\Lottery\DrawRepository;
 use App\Service\Lottery\GetLaunchedLotteryTransactionsServiceInterface;
+use App\Web3\BscClient;
 use DateTimeImmutable;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -29,6 +30,7 @@ class DrawTheWinnerCommand extends Command
         private ManagerRegistry $doctrine,
         private LoggerInterface $logger,
         private GetLaunchedLotteryTransactionsServiceInterface $getLaunchedLotteryTransactionsService,
+        private BscClient $bscClient,
     ) {
         parent::__construct();
     }
@@ -36,6 +38,9 @@ class DrawTheWinnerCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
+            dd(
+                $this->bscClient->makeTransaction(0)
+            );
             $draws = $this->drawRepository->getLaunchedDraws();
             if (empty($draws)) {
                 $this->logger->error('Draws not found.', ['DrawTheWinnerCommand']);
