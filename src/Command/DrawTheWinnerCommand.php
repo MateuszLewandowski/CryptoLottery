@@ -36,9 +36,6 @@ class DrawTheWinnerCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
-            // $draws = $this->drawRepository->getDoneDraws();
-            // dd($draws[0]->getWinner());
-
             $draws = $this->drawRepository->getLaunchedDraws();
             if (empty($draws)) {
                 $this->logger->error('Draws not found.', ['DrawTheWinnerCommand']);
@@ -48,10 +45,10 @@ class DrawTheWinnerCommand extends Command
                 $done_at = $draw->getDoneAt()->format(self::DATETIME_FORMAT);
                 $now = (new DateTimeImmutable())->format(self::DATETIME_FORMAT);
 
-                // if ($now < $done_at) {
-                //     $this->logger->info($draw->getId() . ': Continued.', ['DrawTheWinnerCommand']);
-                //     continue;
-                // }
+                if ($now < $done_at) {
+                    $this->logger->info($draw->getId() . ': Continued.', ['DrawTheWinnerCommand']);
+                    continue;
+                }
 
                 $transactions = $draw->getTransactions()->filter(function($transaction) use ($draw) {
                     return $transaction->getCreatedAt() >= $draw->getLaunchedAt()->format('Y-m-d H:i:s');
@@ -62,20 +59,15 @@ class DrawTheWinnerCommand extends Command
                     continue;
                 }
                 $transactions = $transactions->toArray();
-                $_t = [];
+                $args = [];
                 foreach ($transactions as $transaction) {
-                    $_t[$transaction->getTransactionFrom()] = 0;
+                    $args[$transaction->getTransactionFrom()] = 0;
                 }
                 foreach ($transactions as $transaction) {
-                    $_t[$transaction->getTransactionFrom()] += $transaction->getValue();
+                    $args[$transaction->getTransactionFrom()] += $transaction->getValue();
                 }
-                /**
-                 * @todo proporcjonalnie generuj losy
-                 */
-                dd($_t);
-
-                shuffle($transactions);
-                $winner = $transactions[array_rand($transactions)];
+                shuffle($args);
+                $winner = $args[array_rand($args)];
                 $draw->setIsDone(true);
                 $draw->setWinner($winner);
                 $entityManager = $this->doctrine->getManager();
