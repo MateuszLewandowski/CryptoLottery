@@ -62,6 +62,7 @@ class LotteryLogsSyncCommand extends Command
                             flush: true,
                         );
                     }
+                    $is_draw_unnecessary = true;
                     /**
                      * Sync
                      */
@@ -81,9 +82,16 @@ class LotteryLogsSyncCommand extends Command
                                     'gas_price' => $transaction_meta['gasPrice'],
                                 ]
                             );
+                            $is_draw_unnecessary = false;
                         } catch (Throwable $e) {
                             continue;
                         }
+                    }
+                    if ($is_draw_unnecessary) {
+                        $this->drawRepository->remove(
+                            entity: $draw,
+                            flush: true,
+                        );
                     }
                     /**
                      * Check if draw can be launched.
