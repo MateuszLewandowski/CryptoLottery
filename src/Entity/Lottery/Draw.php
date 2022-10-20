@@ -34,14 +34,18 @@ class Draw implements FactorableEntityInterface
     #[ORM\Column]
     private ?bool $is_done = null;
 
-    #[ORM\OneToOne(cascade: ['persist', 'remove'])]
-    private ?Transaction $winner = null;
+    #[ORM\Column(nullable: true)]
+    private ?string $winner = null;
+
+    #[ORM\Column(nullable: true, type: 'bigint')]
+    private ?int $award = null;
 
     public function __construct(
     ) {
         $this->created_at = new DateTimeImmutable();
         $this->transactions = new ArrayCollection();
         $this->is_done = false;
+        $this->winner = null;
     }
 
     public function getId(): ?string
@@ -120,14 +124,26 @@ class Draw implements FactorableEntityInterface
         return $this;
     }
 
-    public function getWinner(): ?Transaction
+    public function getWinner(): ?string
     {
         return $this->winner;
     }
 
-    public function setWinner(?Transaction $winner): self
+    public function setWinner(?string $winner): self
     {
         $this->winner = $winner;
+
+        return $this;
+    }
+
+    public function getAward(): ?int
+    {
+        return $this->award;
+    }
+
+    public function setAward(?int $award): self
+    {
+        $this->award = $award;
 
         return $this;
     }

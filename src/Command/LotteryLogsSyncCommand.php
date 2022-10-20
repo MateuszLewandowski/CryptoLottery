@@ -11,6 +11,7 @@ use App\Repository\Lottery\DrawRepository;
 use App\Repository\TransactionRepository;
 use App\Service\Lottery\LaunchDrawServiceInterface;
 use App\Service\Lottery\LogsSyncServiceInterface;
+use App\Service\Lottery\RemoveUnnecessaryDraw;
 use App\Web3\BscClient;
 use DateTimeImmutable;
 use Doctrine\Persistence\ManagerRegistry;
@@ -41,6 +42,7 @@ class LotteryLogsSyncCommand extends Command
         private TransactionRepository $transactionRepository,
         private ConfigRepository $configRepository,
         private LaunchDrawServiceInterface $launchDrawService,
+        private RemoveUnnecessaryDraw $removeUnnecessaryDraw,
     ) {
         parent::__construct();
     }
@@ -67,31 +69,24 @@ class LotteryLogsSyncCommand extends Command
                      * Sync
                      */
                     foreach ($response['result'] as $transaction_meta) {
-                        try {
-                            $this->logsSyncService->action(
-                                args: [
-                                    'draw' => $draw,
-                                    'block_number' => $transaction_meta['blockNumber'],
-                                    'block_hash' => $transaction_meta['blockHash'],
-                                    'timestamp' => $transaction_meta['timeStamp'],
-                                    'hash' => $transaction_meta['hash'],
-                                    'transaction_from' => $transaction_meta['from'],
-                                    'transaction_to' => $transaction_meta['to'],
-                                    'value' => $transaction_meta['value'],
-                                    'gas' => $transaction_meta['gas'],
-                                    'gas_price' => $transaction_meta['gasPrice'],
-                                ]
-                            );
-                            $is_draw_unnecessary = false;
-                        } catch (Throwable $e) {
-                            continue;
-                        }
+                        $this->logsSyncService->action(
+                            args: [
+                                'draw' => $draw,
+                                'block_number' => $transaction_meta['blockNumber'],
+                                'block_hash' => $transaction_meta['blockHash'],
+                                'timestamp' => $transaction_meta['timeStamp'],
+                                'hash' => $transaction_meta['hash'],
+                                'transaction_from' => $transaction_meta['from'],
+                                'transaction_to' => $transaction_meta['to'],
+                                'value' => $transaction_meta['value'],
+                                'gas' => $transaction_meta['gas'],
+                                'gas_price' => $transaction_meta['gasPrice'],
+                            ]
+                        );
+                        $is_draw_unnecessary = false;
                     }
                     if ($is_draw_unnecessary) {
-                        $this->drawRepository->remove(
-                            entity: $draw,
-                            flush: true,
-                        );
+                        $this->removeUnnecessaryDraw->action($draw);
                     }
                     /**
                      * Check if draw can be launched.
@@ -115,8 +110,14 @@ class LotteryLogsSyncCommand extends Command
     }
 
     private function checkIfDrawCanBeLaunched(Draw $draw, Config $config): bool {
-        return $config->getLotteryRequiredTicketsSum() < $this->transactionRepository->getActiveDrawTransactionsSum(
-            date: $draw->getCreatedAt()
-        );
+        $sum = 0;
+        $transactions = $draw->getTransactions()->toArray();
+        if (empty($transactions)) {
+            return false;
+        }
+        foreach ($transactions as $transaction) {
+            $sum += $transaction->getValue();
+        }
+        return $config->getLotteryRequiredTicketsSum() < $sum;
     }
 }

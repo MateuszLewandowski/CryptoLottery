@@ -53,17 +53,13 @@ final class UpdateConfigRequest extends Request implements ValidatableRequestInt
                 message: 'Unauthorized.',
             );
         }
-
         $this->draw_begins_at_hour = $this->request->get('draw_begins_at_hour');
         $this->draw_begins_at_day_no = $this->request->get('draw_begins_at_day_no');
         $this->draw_begins_at_concrete_day = $this->request->get('draw_begins_at_concrete_day');
-        $this->draw_is_concrete_day_set = $this->request->get('draw_is_concrete_day_set');
+        $this->draw_is_concrete_day_set = filter_var($this->request->get('draw_is_concrete_day_set'), FILTER_VALIDATE_BOOLEAN);
         $this->lottery_ticket_cost = (int) $this->request->get('lottery_ticket_cost');
         $this->lottery_required_tickets_sum = (int) $this->request->get('lottery_required_tickets_sum');
-        $this->fee_basic = MathFloatConvertHelper::run(
-            (float) $this->request->get('fee_basic')
-        );
-
+        $this->fee_basic = (float) $this->request->get('fee_basic');
         $this->runCoreValidation(
             to_validate: self::TO_VALIDATE
         );
@@ -121,8 +117,7 @@ final class UpdateConfigRequest extends Request implements ValidatableRequestInt
 
     private static function validateDrawIsConcreteDaySet($draw_is_concrete_day_set): Result 
     {
-        $isNotNull = new IsNotNull;
-        $isNotNull->set(new IsBoolean);
+        $isNotNull = new IsBoolean;
         return $isNotNull->validate(value: $draw_is_concrete_day_set);
     }
 
@@ -148,7 +143,7 @@ final class UpdateConfigRequest extends Request implements ValidatableRequestInt
     {
         $isNotNull = new IsNotNull;
         $isNotNull
-            ->set(new IsInteger)
+            ->set(new IsFloat)
             ->set(new IsPositiveOrZero);
         return $isNotNull->validate(value: $fee_basic);
     }

@@ -36,7 +36,7 @@ class Config implements FactorableEntityInterface
     #[Assert\Positive]
     private ?int $lottery_required_tickets_sum = null;
 
-    #[ORM\Column(type: Types::SMALLINT)]
+    #[ORM\Column(type: Types::FLOAT)]
     #[Assert\PositiveOrZero]
     private ?float $fee_basic = null;
 

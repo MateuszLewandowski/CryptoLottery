@@ -46,6 +46,19 @@ class TransactionRepository extends ServiceEntityRepository
         }
     }
 
+    public function checkIfExists(string $hash): bool {
+        try {
+            return $this->createQueryBuilder('t')
+                ->where('t.hash = :hash')
+                ->setParameter('hash', $hash)
+                ->getQuery()
+                ->setMaxResults(1)
+                ->getOneOrNullResult() !== null;
+        } catch (Throwable $e) {
+            throw $e;
+        }
+    }
+
     public function getActiveDrawTransactionsSum(DateTimeImmutable $date): int 
     {
         try {

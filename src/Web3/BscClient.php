@@ -16,6 +16,7 @@ final class BscClient
     private const API_KEY = 'AETXUYUD8M7JNIXVXR86YETWUQIBSP4GDP';
     public const LOTTERY_WALLET = '0x919d0bD4D33a24805f3BaC9DF9c886Eb83126F8E'; # mozilla
     private const TEST_WALLET = '0x7641559b0D6C5D28D139A02Ff25A0d8449cC449b'; # chrome
+    private const MARIUSZ = '0x005b9882270051e323e291B2E7257235F2408Eff';
 
     public function __construct(
         private HttpClientInterface $client,
@@ -23,7 +24,7 @@ final class BscClient
     }
 
     public function test() {
-        $this->getLogs();
+        $this->getBalance(self::MARIUSZ);
         // $this->getContractABI(self::TEST_WALLET);
     }
 

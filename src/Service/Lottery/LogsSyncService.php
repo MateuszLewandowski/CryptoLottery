@@ -16,14 +16,17 @@ final class LogsSyncService implements LogsSyncServiceInterface
     ) {
     }
     
-    public function action(array $args): array|Result 
+    public function action(array $args): void
     {
+        if ($this->transactionRepository->checkIfExists($args['hash'])) {
+            return;
+        }
         $this->transactionRepository->save(
             entity: $this->transactionFactory->create(
                 arguments: $args,
             ),
             flush: true,
         );
-        return [];
+        return;
     }
 }
